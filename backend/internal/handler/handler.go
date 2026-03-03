@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
+// TODO_TOM logging
 type Handler struct {
 	cfg *config.Config
 	svc *service.Service
@@ -31,6 +32,7 @@ func (h *Handler) Routes() http.Handler {
 	}))
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/dependencies", h.Get)
+		r.Get("/dependencies/{name}", h.Get)
 		r.Post("/dependencies/{name}", h.Post)
 		r.Put("/dependencies/{name}", h.Put)
 		r.Delete("/dependencies/{name}", h.Delete)
@@ -41,7 +43,7 @@ func (h *Handler) Routes() http.Handler {
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
-	name := r.URL.Query().Get("name")
+	name := chi.URLParam(r, "name")
 	minScoreStr := r.URL.Query().Get("minScore")
 
 	minScore, _ := strconv.ParseFloat(minScoreStr, 64)
@@ -51,8 +53,11 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
-	json.NewEncoder(w).Encode(result)
+	if len(result) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		json.NewEncoder(w).Encode(result)
+	}
 }
 
 func (h *Handler) Put(w http.ResponseWriter, r *http.Request) {

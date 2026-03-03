@@ -9,7 +9,7 @@ RUN go mod download && go mod verify
 
 COPY . .
 
-RUN go build -ldflags="-s -w" -o app ./cmd/api/main.go
+RUN go build -ldflags="-s -w" -o api ./cmd/api/main.go
 
 FROM debian:bookworm-slim
 
@@ -20,14 +20,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN useradd -u 10001 -r -s /usr/sbin/nologin appuser
 
+RUN mkdir /data && chown appuser:appuser /data
+
 WORKDIR /app
 
-COPY --from=builder /src/app .
+COPY --from=builder /src/api .
 
-RUN chown appuser:appuser /app/app
+RUN chown appuser:appuser /app
+
+VOLUME ["/data"]
 
 USER appuser
 
 EXPOSE 8080
 
-ENTRYPOINT ["./app"]
+ENTRYPOINT ["./api"]
