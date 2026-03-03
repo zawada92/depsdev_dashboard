@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"dependency-dashboard/config"
+	"dependency-dashboard/internal/model"
 	"dependency-dashboard/internal/service"
 
 	"github.com/go-chi/chi/v5"
@@ -25,7 +26,7 @@ func New(cfg *config.Config, s *service.Service) *Handler {
 func (h *Handler) Routes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedOrigins:   []string{h.cfg.CorsAddress},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true,
@@ -42,6 +43,7 @@ func (h *Handler) Routes() http.Handler {
 	return r
 }
 
+// TODO_TOM swagger
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	minScoreStr := r.URL.Query().Get("minScore")
@@ -54,7 +56,12 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(result) == 0 {
-		w.WriteHeader(http.StatusNotFound)
+		if name != "" {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			result = []model.Dependency{}
+			json.NewEncoder(w).Encode(result)
+		}
 	} else {
 		json.NewEncoder(w).Encode(result)
 	}

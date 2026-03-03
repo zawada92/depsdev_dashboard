@@ -51,6 +51,7 @@ func (r *Repository) Upsert(ctx context.Context, d *model.Dependency) error {
 
 func (r *Repository) List(ctx context.Context, name string, minScore float64) ([]model.Dependency, error) {
 	// TODO_TOM paging/metrics
+	// TODO_TOM seperate query for List all
 	query := `
 	SELECT name, version, openssf_score, last_updated
 	FROM dependencies

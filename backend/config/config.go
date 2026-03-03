@@ -20,6 +20,7 @@ type Config struct {
 	ServiceMode          ServiceModeType
 	HttpClientTimeoutSec int
 	DbPath               string
+	CorsAddress          string
 }
 
 func defaultConfig() Config {
@@ -27,6 +28,7 @@ func defaultConfig() Config {
 		ServiceMode:          UpstreamCache,
 		HttpClientTimeoutSec: 10,
 		DbPath:               "/data/app.db",
+		CorsAddress:          "http://localhost:3000",
 	}
 }
 
@@ -53,6 +55,10 @@ func NewConfig() (*Config, error) {
 	}
 	if dbPath, exists := os.LookupEnv("DB_PATH"); exists {
 		cfg.DbPath = dbPath
+	}
+	if corsAddress, exists := os.LookupEnv("CORS_ADDRESS"); exists {
+		cfg.CorsAddress = corsAddress
+		fmt.Println("Using ", cfg.CorsAddress)
 	}
 
 	return &cfg, nil
