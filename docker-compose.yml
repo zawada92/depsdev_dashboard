@@ -5,10 +5,11 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - LOG_LEVEL=DEBUG
       - DB_PATH=/data/app.db
       - SERVICE_MODE=UPSTREAM_CACHE
       - HTTP_CLIENT_TIMEOUT_SEC=10
-      - CORS_ADDRESS=http://localhost:3000
+      - CORS_ADDRESS=*
     volumes:
       - backend_data:/data
     restart: unless-stopped

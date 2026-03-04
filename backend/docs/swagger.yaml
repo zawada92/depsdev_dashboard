@@ -1,0 +1,233 @@
+definitions:
+  model.Dependency:
+    properties:
+      last_updated:
+        type: string
+      name:
+        type: string
+      openssf_score:
+        type: number
+      version:
+        type: string
+    type: object
+  model.PatchDependencyRequest:
+    properties:
+      openssf_score:
+        type: number
+      version:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/dependencies:
+    get:
+      description: Fetches list of all dependencies or a specific one by name with
+        optional score filtering.
+      operationId: get-dependencies
+      parameters:
+      - description: Minimum OpenSSF Score filter
+        in: query
+        name: minScore
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Dependency'
+            type: array
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get dependencies
+  /api/v1/dependencies/{name}:
+    delete:
+      description: Removes a dependency from the local repository.
+      operationId: delete-dependency
+      parameters:
+      - description: Dependency name
+        in: path
+        name: name
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: nil
+        "500":
+          description: Internal error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete dependency
+    get:
+      description: Fetches list of all dependencies or a specific one by name with
+        optional score filtering.
+      operationId: get-dependencies
+      parameters:
+      - description: Dependency name (optional)
+        in: path
+        name: name
+        type: string
+      - description: Minimum OpenSSF Score filter
+        in: query
+        name: minScore
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Dependency'
+            type: array
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get dependencies
+    patch:
+      consumes:
+      - application/json
+      description: Updates specific fields of a dependency. Returns 405 in UpstreamCache
+        mode.
+      operationId: patch-dependency
+      parameters:
+      - description: Dependency name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Partial update fields
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.PatchDependencyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Dependency'
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "405":
+          description: Method Not Allowed (UpstreamCache mode)
+          schema:
+            type: nil
+        "500":
+          description: Internal error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Partial update
+    post:
+      description: Triggers fetching dependency data from upstream. Returns 405 in
+        UpstreamCache mode.
+      operationId: post-dependency
+      parameters:
+      - description: Dependency name
+        in: path
+        name: name
+        required: true
+        type: string
+      responses:
+        "201":
+          description: Created/Fetched
+          schema:
+            type: nil
+        "405":
+          description: Method Not Allowed (UpstreamCache mode)
+          schema:
+            type: nil
+        "500":
+          description: Internal error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Fetch dependency from upstream
+    put:
+      consumes:
+      - application/json
+      description: 'In UpstreamCache mode: triggers fetch (201). In AuthoritativeDb
+        mode: performs full update (200).'
+      operationId: put-dependency
+      parameters:
+      - description: Dependency name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Body required only in AuthoritativeDb mode
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/model.PatchDependencyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated object (AuthoritativeDb mode)
+          schema:
+            $ref: '#/definitions/model.Dependency'
+        "201":
+          description: Fetched/Created from upstream (UpstreamCache mode)
+          schema:
+            type: nil
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update or Fetch dependency
+swagger: "2.0"

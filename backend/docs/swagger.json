@@ -1,0 +1,345 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/api/v1/dependencies": {
+            "get": {
+                "description": "Fetches list of all dependencies or a specific one by name with optional score filtering.",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get dependencies",
+                "operationId": "get-dependencies",
+                "parameters": [
+                    {
+                        "type": "number",
+                        "description": "Minimum OpenSSF Score filter",
+                        "name": "minScore",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Dependency"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/dependencies/{name}": {
+            "get": {
+                "description": "Fetches list of all dependencies or a specific one by name with optional score filtering.",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get dependencies",
+                "operationId": "get-dependencies",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Dependency name (optional)",
+                        "name": "name",
+                        "in": "path"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Minimum OpenSSF Score filter",
+                        "name": "minScore",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Dependency"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "In UpstreamCache mode: triggers fetch (201). In AuthoritativeDb mode: performs full update (200).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Update or Fetch dependency",
+                "operationId": "put-dependency",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Dependency name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Body required only in AuthoritativeDb mode",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/model.PatchDependencyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated object (AuthoritativeDb mode)",
+                        "schema": {
+                            "$ref": "#/definitions/model.Dependency"
+                        }
+                    },
+                    "201": {
+                        "description": "Fetched/Created from upstream (UpstreamCache mode)",
+                        "schema": {
+                            "type": "nil"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Triggers fetching dependency data from upstream. Returns 405 in UpstreamCache mode.",
+                "summary": "Fetch dependency from upstream",
+                "operationId": "post-dependency",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Dependency name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created/Fetched",
+                        "schema": {
+                            "type": "nil"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed (UpstreamCache mode)",
+                        "schema": {
+                            "type": "nil"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Removes a dependency from the local repository.",
+                "summary": "Delete dependency",
+                "operationId": "delete-dependency",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Dependency name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "nil"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Updates specific fields of a dependency. Returns 405 in UpstreamCache mode.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Partial update",
+                "operationId": "patch-dependency",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Dependency name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial update fields",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PatchDependencyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Dependency"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed (UpstreamCache mode)",
+                        "schema": {
+                            "type": "nil"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.Dependency": {
+            "type": "object",
+            "properties": {
+                "last_updated": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "openssf_score": {
+                    "type": "number"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PatchDependencyRequest": {
+            "type": "object",
+            "properties": {
+                "openssf_score": {
+                    "type": "number"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

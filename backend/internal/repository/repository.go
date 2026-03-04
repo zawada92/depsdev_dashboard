@@ -3,9 +3,15 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 
+	"dependency-dashboard/internal/domain"
 	"dependency-dashboard/internal/model"
+
+	"github.com/rs/zerolog/log"
 )
+
+var ErrNotFound = domain.ErrNotFound
 
 type Repository struct {
 	db *sql.DB
@@ -50,22 +56,10 @@ func (r *Repository) Upsert(ctx context.Context, d *model.Dependency) error {
 }
 
 func (r *Repository) List(ctx context.Context, name string, minScore float64) ([]model.Dependency, error) {
-	// TODO_TOM paging/metrics
-	// TODO_TOM seperate query for List all
-	query := `
-	SELECT name, version, openssf_score, last_updated
-	FROM dependencies
-	WHERE (? = '' OR name LIKE ?)
-	AND (? = 0 OR openssf_score >= ?)
-	ORDER BY openssf_score DESC;
-	`
+	query, args := buildQuery(name, minScore)
+	log.Debug().Str("query", query).Interface("args", args).Send()
 
-	rows, err := r.db.QueryContext(ctx, query,
-		name,
-		"%"+name+"%",
-		minScore,
-		minScore,
-	)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -86,10 +80,107 @@ func (r *Repository) List(ctx context.Context, name string, minScore float64) ([
 		deps = append(deps, d)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return deps, nil
 }
 
+func (r *Repository) Update(ctx context.Context, d *model.Dependency) error {
+	query := `
+		UPDATE dependencies
+		SET version = ?, openssf_score = ?, last_updated = ?
+		WHERE name = ?
+	`
+
+	res, err := r.db.ExecContext(
+		ctx,
+		query,
+		d.Version,
+		d.OpenSSFScore,
+		d.LastUpdated,
+		d.Name,
+	)
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
 func (r *Repository) Delete(ctx context.Context, name string) error {
-	_, err := r.db.ExecContext(ctx, "DELETE FROM dependencies WHERE name = ?", name)
-	return err
+	res, err := r.db.ExecContext(ctx, "DELETE FROM dependencies WHERE name = ?", name)
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (r *Repository) GetByName(ctx context.Context, name string) (*model.Dependency, error) {
+	query := `
+		SELECT name, version, openssf_score, last_updated
+		FROM dependencies
+		WHERE name = ?
+	`
+
+	var d model.Dependency
+	err := r.db.QueryRowContext(ctx, query, name).Scan(
+		&d.Name,
+		&d.Version,
+		&d.OpenSSFScore,
+		&d.LastUpdated,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &d, nil
+}
+
+func buildQuery(name string, minScore float64) (string, []any) {
+	query := `
+		SELECT name, version, openssf_score, last_updated
+		FROM dependencies
+		WHERE 1=1
+	`
+	args := []any{}
+
+	if name != "" {
+		query += " AND name LIKE ?"
+		// Could be use "%"+name+"%" to search for name substring
+		args = append(args, name+"%")
+	}
+
+	if minScore > 0 {
+		query += " AND openssf_score >= ?"
+		args = append(args, minScore)
+	}
+
+	query += " ORDER BY openssf_score DESC"
+
+	return query, args
 }

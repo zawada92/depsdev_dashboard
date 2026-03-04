@@ -2,17 +2,17 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/rs/zerolog/log"
 )
 
 type ServiceModeType string
 
 const (
-	AuthoritativeDB = "AUTHORRITATIVE_DB"
+	AuthoritativeDB = "AUTHORITATIVE_DB"
 	UpstreamCache   = "UPSTREAM_CACHE"
 )
 
@@ -28,14 +28,15 @@ func defaultConfig() Config {
 		ServiceMode:          UpstreamCache,
 		HttpClientTimeoutSec: 10,
 		DbPath:               "/data/app.db",
-		CorsAddress:          "http://localhost:3000",
+		CorsAddress:          "*",
 	}
 }
 
+// TODO use viper or something
 func NewConfig() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Using default config no env file")
+		log.Info().Msg("Using default config no env file")
 	}
 
 	cfg := defaultConfig()
@@ -58,7 +59,6 @@ func NewConfig() (*Config, error) {
 	}
 	if corsAddress, exists := os.LookupEnv("CORS_ADDRESS"); exists {
 		cfg.CorsAddress = corsAddress
-		fmt.Println("Using ", cfg.CorsAddress)
 	}
 
 	return &cfg, nil

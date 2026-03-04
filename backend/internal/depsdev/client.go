@@ -2,6 +2,8 @@ package depsdev
 
 import (
 	"context"
+	"dependency-dashboard/internal/domain"
+	"dependency-dashboard/internal/model"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,7 +11,7 @@ import (
 	"net/url"
 	"time"
 
-	"dependency-dashboard/internal/model"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 const (
@@ -45,15 +47,18 @@ type ProjectKey struct {
 
 type Client struct {
 	baseURL string
-	http    *http.Client
+	http    *retryablehttp.Client
 }
 
 func New(timeoutSec int) *Client {
-	httpClient := &http.Client{Timeout: time.Duration(timeoutSec) * time.Second}
+	retryableHttpClient := retryablehttp.NewClient()
+	retryableHttpClient.HTTPClient.Timeout = time.Duration(timeoutSec) * time.Second
+	// TODO add cfg var for max retries
+	retryableHttpClient.RetryMax = 3
 
 	return &Client{
 		baseURL: baseURL,
-		http:    httpClient,
+		http:    retryableHttpClient,
 	}
 }
 
@@ -158,21 +163,27 @@ func (c *Client) fetchScore(ctx context.Context, projectID string) (float64, err
 }
 
 func (c *Client) get(ctx context.Context, url string, out any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := retryablehttp.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
 
-	// TODO_TOM retries
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return domain.ErrNotFound
+	}
+
+	if resp.StatusCode >= 500 {
+		return fmt.Errorf("upstream service error: %d", resp.StatusCode)
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		// TODO_TOM return correct responses
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return domain.ErrUnexpected
 	}
 
 	return json.NewDecoder(resp.Body).Decode(out)
