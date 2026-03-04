@@ -41,7 +41,7 @@ The behavior of the API is determined by the `SERVICE_MODE` environment variable
 ### Backend Quick Start
 1. **Prerequisites**: Go 1.25.6, [Swag CLI](https://github.com/swaggo/swag).
 2. **Generate Documentation**:
-   ```bash
+```bash
    cd backend
    swag init -g cmd/api/main.go -o ./docs -d .
 
@@ -237,5 +237,6 @@ docker-compose up --build
 * pagination of response with list of dependencies
 * metrics
 * better logging for debugging
+* address other TODOs for more maintainable code
 
 ---
